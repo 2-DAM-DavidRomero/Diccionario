@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,13 +29,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +66,7 @@ import com.example.diccionario.ui.theme.DiccionarioTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,9 +92,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     var palabra by remember { mutableStateOf<Palabra?>(null) }
     var textPalabra by remember { mutableStateOf("") }
 
-
-
-
     Column(
         modifier = Modifier.background(colorResource(R.color.teal_700))
             .padding(WindowInsets.statusBars.asPaddingValues()) // evita la barra superior / notch
@@ -107,12 +112,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 painter = painterResource(id = R.drawable.unnamed),
                 contentDescription = "Logo Rae",
             )
-            TextField(
+            OutlinedTextField(
                 value = textPalabra,
                 onValueChange = { textPalabra = it },
                 placeholder = { Text("Palabra") },
                 singleLine = true,
                 modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp)
                     .weight(1f)
             )
             Box(
@@ -156,10 +162,15 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .weight(0.25f)
                         .fillMaxWidth()
-                        .background(colorResource(R.color.purple_200))
+                        .background(colorResource(R.color.purple_200)),
+                        contentAlignment = Alignment.Center
                 ){
                     if (palabra != null) {
-                        Text(text = palabra!!.word)
+                        Text(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 34.sp,
+                            text = palabra!!.word.uppercase(Locale.ROOT)
+                        )
                     }
                 }
 
@@ -170,55 +181,97 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         .weight(1f)
                         .fillMaxWidth()
                         .background(colorResource(R.color.purple_200))
-                )
+                ){
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(colorResource(R.color.purple_200))
+                            .padding(10.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        if (palabra != null) {
+                            var cont = 1
+                            Text(
+                                fontSize = 15.sp,
+                                color = colorResource(R.color.verde),
+                                text = "Estimología:\n " +
+                                        palabra!!.meanings[0].origin.raw
+                            )
+                            Spacer(modifier = Modifier.height(5.dp))
+
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 5.dp),
+                                thickness = 1.dp,
+                                color = Color.Black
+                            )
+
+                            Spacer(modifier = Modifier.height(5.dp))
+
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                text = "Definiciones:"
+                            )
+                            for (sense in palabra!!.meanings[0].senses) {
+                                Text(
+                                    fontSize = 15.sp,
+                                    text = "$cont. ${sense.description}"
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                cont ++
+                            }
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                text = "Sinónimos o afines de:"
+                            )
+                            for (sense in palabra!!.meanings[0].senses) {
+                                if (sense.synonyms != null) {
+                                    var lineaSinonimos = ""
+                                    for (sinonimo in sense.synonyms) {
+                                        lineaSinonimos += "$sinonimo, "
+                                    }
+
+                                    lineaSinonimos = lineaSinonimos.removeSuffix(", ")
+
+                                    Text(
+                                        text = "• $lineaSinonimos",
+                                        fontSize = 14.sp,
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    cont++
+                                }
+                            }
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                text = "Antónimos u opuestos de:"
+                            )
+                            for (sense in palabra!!.meanings[0].senses) {
+                                if (sense.antonyms != null) {
+                                    var lineaSinonimos = ""
+                                    for (sinonimo in sense.antonyms) {
+                                        lineaSinonimos += "$sinonimo, "
+                                    }
+
+                                    lineaSinonimos = lineaSinonimos.removeSuffix(", ")
+
+                                    Text(
+                                        text = "• $lineaSinonimos",
+                                        fontSize = 14.sp,
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    cont++
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//    Column(modifier = modifier.padding(16.dp)) {
-//        // Si la palabra aún no llegó
-//        if (palabra == null) {
-//            Text("Cargando…")
-//        } else {
-//            Text(text = "Palabra: ${palabra!!.word}", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-//
-//            // Primer sense con sinónimos
-//            val firstSense = palabra!!
-//                .meanings
-//                .flatMap { it.senses }
-//                .firstOrNull { it.synonyms?.isNotEmpty() == true }
-//
-//            val sinonimos = firstSense?.synonyms ?: emptyList()
-//
-//            if (sinonimos.isNotEmpty()) {
-//                Text("Descripción: ${firstSense?.description}")
-//                sinonimos.forEach { sinonimo ->
-//                    Text("• $sinonimo")
-//                }
-//            } else {
-//                Text("Sin sinónimos 😭")
-//            }
-//        }
-//    }
 }
 
 
